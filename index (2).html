@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fyllafotball</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: én kolonne — banehode, lag, spillerkort, vorsmål, vorsteller, regnestykket. */
+:root{
+  --bg:#eef3ec; --surface:#ffffff; --line:#cfdccb; --fg:#13261a; --muted:#56705d;
+  --pitch:#1d6b3a; --pitch-ink:#ffffff; --card:#f2c418; --card-ink:#2a2200; --red:#c8322b;
+  --display:"Big Shoulders Display", Impact, "Arial Narrow", sans-serif;
+  --body:"Work Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c1710; --surface:#132119; --line:#24392b; --fg:#e7f1e9; --muted:#8fa996;
+  --pitch:#22804a; --pitch-ink:#ffffff; --card:#f2c418; --card-ink:#2a2200; --red:#ff6a5f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1710; --surface:#132119; --line:#24392b; --fg:#e7f1e9; --muted:#8fa996;
+  --pitch:#22804a; --pitch-ink:#ffffff; --card:#f2c418; --card-ink:#2a2200; --red:#ff6a5f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.5 var(--body);padding:24px 16px 48px}
+.wrap{max-width:720px;margin:0 auto;display:grid;gap:20px}
+header{background:var(--pitch);color:var(--pitch-ink);border-radius:14px;padding:22px 20px;position:relative;overflow:hidden}
+header::before{content:"";position:absolute;inset:10px;border:2px solid color-mix(in srgb,var(--pitch-ink) 35%,transparent);border-radius:8px;pointer-events:none}
+header::after{content:"";position:absolute;left:50%;top:50%;width:120px;height:120px;margin:-60px 0 0 -60px;border:2px solid color-mix(in srgb,var(--pitch-ink) 25%,transparent);border-radius:50%;pointer-events:none}
+h1{font-family:var(--display);font-weight:900;font-size:clamp(2.6rem,10vw,4.2rem);line-height:.9;margin:0;letter-spacing:.01em;text-transform:uppercase;position:relative}
+header p{margin:8px 0 0;max-width:48ch;position:relative;opacity:.92}
+.tag{display:inline-block;margin-top:10px;position:relative;background:var(--card);color:var(--card-ink);font:700 .75rem var(--mono);padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em}
+h2{font-family:var(--display);font-weight:700;font-size:1.6rem;text-transform:uppercase;letter-spacing:.03em;margin:0 0 12px;text-wrap:balance}
+h3{font-family:var(--display);font-weight:700;font-size:1.25rem;text-transform:uppercase;margin:0;letter-spacing:.03em}
+section{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+label{display:grid;gap:4px;font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+input,select{font:500 1rem var(--body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--card);outline-offset:2px}
+.scale{margin-top:16px;display:grid;gap:8px}
+.scale input{padding:0;accent-color:var(--pitch)}
+.ticks{display:grid;grid-template-columns:repeat(5,1fr);font-size:.72rem;color:var(--muted);text-align:center}
+.ticks span:first-child{text-align:left}.ticks span:last-child{text-align:right}
+.scale-now{font-family:var(--display);font-size:1.4rem;font-weight:700;text-transform:uppercase}
+.scale-now small{font-family:var(--mono);font-size:.8rem;color:var(--muted);margin-left:6px;text-transform:none}
+.scale-quip{font-size:.9rem;color:var(--muted);margin:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:center}
+button{font:600 .95rem var(--body);border-radius:8px;padding:10px 16px;cursor:pointer;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+button.primary{background:var(--pitch);color:var(--pitch-ink);border-color:var(--pitch)}
+button.onpitch{background:transparent;color:var(--pitch-ink);border-color:color-mix(in srgb,var(--pitch-ink) 55%,transparent)}
+.editing{font-size:.9rem;font-weight:600;color:var(--pitch);margin:0 0 10px}
+button.big{flex:1 1 100%;font-size:1.25rem;padding:16px;font-family:var(--display);text-transform:uppercase;letter-spacing:.04em}
+button:disabled{opacity:.5;cursor:not-allowed}
+.inline{display:flex;gap:10px;flex-wrap:wrap}
+.inline input{flex:1 1 180px;width:auto}
+.teams{display:grid;gap:12px;margin-top:14px}
+.team{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:10px;background:var(--bg)}
+.team-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.team-head span{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:4px;border-radius:99px;padding:4px 4px 4px 12px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:.92rem}
+.chip.active{background:var(--card);color:var(--card-ink);border-color:var(--card)}
+.chip button{border:none;background:transparent;color:inherit;padding:2px 8px;font-size:.92rem}
+.chip .pick{padding:0;font-weight:600}
+.chip small{font-family:var(--mono);font-size:.75rem;opacity:.75;margin-right:6px}
+.team.flash{animation:flash 1.6s ease-out}
+@keyframes flash{0%,30%,60%{background:var(--card);border-color:var(--card);box-shadow:0 0 0 4px color-mix(in srgb,var(--card) 45%,transparent)}15%,45%{background:var(--bg)}100%{background:var(--bg);box-shadow:none}}
+.chip.joined{animation:pop .5s cubic-bezier(.3,1.6,.5,1)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--card);color:var(--card-ink);font-weight:700;padding:12px 18px;border-radius:99px;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:10;max-width:calc(100% - 32px);text-align:center;animation:toast 2.6s ease forwards}
+@keyframes toast{0%{opacity:0;transform:translate(-50%,20px)}10%,85%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,10px)}}
+@media (prefers-reduced-motion:reduce){.team.flash,.chip.joined{animation:none}.team.flash{background:var(--card)}.toast{animation:none}}
+.empty{color:var(--muted);font-size:.9rem;margin:0}
+.board{background:var(--pitch);color:var(--pitch-ink);border:none}
+.board h2{margin-bottom:4px}
+.board .who{opacity:.85;margin:0 0 14px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:color-mix(in srgb,#000 22%,var(--pitch));border-radius:10px;padding:12px}
+.stat b{display:block;font-family:var(--mono);font-size:1.9rem;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat span{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;opacity:.85}
+.stat.big{background:var(--card);color:var(--card-ink)}
+.equiv{margin:14px 0 0;font-size:.95rem}
+.equiv strong{font-family:var(--mono)}
+.drinks{display:grid}
+.drink{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.drink:last-child{border-bottom:none}
+.drink .name{font-weight:600}.drink .spec{font-size:.8rem;color:var(--muted);font-family:var(--mono)}
+.step{display:flex;align-items:center;gap:6px}
+.step button{width:40px;height:40px;padding:0;font-size:1.2rem}
+.step output{font-family:var(--mono);font-size:1.2rem;min-width:2.2ch;text-align:center;font-variant-numeric:tabular-nums}
+.icons{display:flex;flex-wrap:wrap;gap:2px;margin-top:4px;min-height:0;align-items:flex-end}
+.icons svg{width:18px;height:22px;display:block}
+.icons .more{font:700 .75rem var(--mono);color:var(--muted);align-self:center;margin-left:4px}
+.icons svg.pop{animation:pop .35s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop{from{transform:scale(0) translateY(6px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.icons svg.pop{animation:none}}
+.meter{margin-top:16px}
+.bar{height:16px;border-radius:99px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--pitch);transition:width .25s}
+.bar.done i{background:var(--card)}
+.bar.over i{background:var(--red)}
+.meter-txt{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-family:var(--mono);font-size:.9rem;margin-top:6px;font-variant-numeric:tabular-nums}
+.verdict{margin-top:10px;font-weight:600;font-size:1.05rem}
+.verdict.over{color:var(--red)}
+.status{font-size:.8rem;color:var(--muted);font-family:var(--mono)}
+.tablewrap{overflow-x:auto;margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums}
+th{text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.num{font-family:var(--mono);text-align:right}th.num{text-align:right}
+tr.me td:first-child{font-weight:700}
+tr[data-id]{cursor:pointer}tr[data-id]:hover td{background:var(--bg)}
+.mini{display:inline-block;width:60px;height:8px;border-radius:99px;background:var(--bg);border:1px solid var(--line);overflow:hidden;vertical-align:middle;margin-right:6px}
+.mini i{display:block;height:100%;background:var(--pitch)}
+.mini.done i{background:var(--card)}.mini.over i{background:var(--red)}
+.wrap>*{min-width:0}
+@media (max-width:600px){
+  table,tbody,tr,td{display:block;width:100%}
+  thead{display:none}
+  tr[data-id]{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;padding:10px 0;border-bottom:1px solid var(--line)}
+  td{border:none;padding:0;white-space:normal;text-align:left!important}
+  td::before{content:attr(data-l);display:block;font:600 .68rem var(--body);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  td:first-child{grid-column:1/-1;font-family:var(--display);font-size:1.25rem;text-transform:uppercase}
+  td:first-child::before,td:last-child::before{content:none}
+  td:last-child{grid-column:1/-1;color:var(--muted);font-size:.85rem}
+}
+.fine{font-size:.85rem;color:var(--muted)}
+.fine p{margin:0 0 8px;max-width:65ch}
+.fine code{font-family:var(--mono);font-size:.8rem;color:var(--fg)}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+<style>body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Fyllafotball</h1>
+    <p>Lag laget, meld deg på og få ditt personlige vorsmål. Vorset varer i to timer, så er det avspark.</p>
+    <span class="tag">Vors 2 t · så kamp</span>
+  </header>
+
+  <section aria-labelledby="h-alle">
+    <h2 id="h-alle">Alle spillerne</h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Navn</th><th>Lag</th><th>Nivå</th><th class="num">Vekt</th><th class="num">Høyde</th><th class="num">Target</th><th class="num">Mål</th><th>Inntatt</th><th>Drikke</th></tr></thead>
+      <tbody id="alle"></tbody>
+    </table></div>
+  </section>
+
+  <section aria-labelledby="h-spiller">
+    <h2 id="h-spiller">Meld deg på</h2>
+    <p class="editing" id="editInfo" hidden></p>
+    <form id="form" autocomplete="off">
+      <div class="grid">
+        <label>Navn<input id="navn" required maxlength="30" placeholder="Ola"></label>
+        <label>Kjønn<select id="kjonn"><option value="m">Mann</option><option value="k">Kvinne</option></select></label>
+        <label>Vekt (kg)<input id="vekt" type="number" inputmode="decimal" min="35" max="200" step="0.5" required></label>
+        <label>Høyde (cm)<input id="hoyde" type="number" inputmode="decimal" min="130" max="220" required></label>
+        <label>Lag<select id="lagValg"></select></label>
+      </div>
+      <div class="scale">
+        <label for="niva">Hvor tung er du på drikken?</label>
+        <input id="niva" type="range" min="1" max="5" step="1" value="3">
+        <div class="ticks"><span>Sigvill</span><span>Lettvekter</span><span>Solid</span><span>Chad</span><span>Iver vektklasse</span></div>
+        <div class="scale-now" id="nivaTxt"></div>
+        <p class="scale-quip" id="nivaQuip"></p>
+      </div>
+      <p class="scale-quip" style="margin-top:14px">Fyll ut og scroll ned. Du ser vorsmålet ditt før du melder deg på, knappen ligger helt nederst.</p>
+    </form>
+  </section>
+
+  <section aria-labelledby="h-lag">
+    <h2 id="h-lag">Lagene</h2>
+    <form id="lagForm" class="inline" autocomplete="off">
+      <input id="lagNavn" placeholder="Lagnavn, f.eks. Pils United" maxlength="40" aria-label="Lagnavn">
+      <button class="primary" type="submit">Lag nytt lag</button>
+    </form>
+    <div class="teams" id="teams"></div>
+    <p class="status" id="sync"></p>
+  </section>
+
+  <section class="board" aria-labelledby="h-mal">
+    <h2 id="h-mal">Vorsmålet</h2>
+    <p class="who" id="who"></p>
+    <div class="stats">
+      <div class="stat big"><span>Rent alkohol på vorset</span><b id="gram">–</b></div>
+      <div class="stat"><span>Target-promille</span><b id="mal">–</b></div>
+      <div class="stat"><span>Brennes av på 2 t</span><b>0,30 ‰</b></div>
+    </div>
+    <p class="equiv" id="equiv"></p>
+    <div class="row"><button type="button" id="endre" class="onpitch">Endre eller bytt lag</button></div>
+  </section>
+
+  <section aria-labelledby="h-kalk">
+    <h2 id="h-kalk">Vorstelleren</h2>
+    <p class="empty" id="kalkWho" style="margin-bottom:6px"></p>
+    <div class="drinks" id="drinks"></div>
+    <div class="meter">
+      <div class="bar" id="bar"><i id="fill" style="width:0"></i></div>
+      <div class="meter-txt"><span id="inntatt">0 g inn</span><span id="est"></span></div>
+      <div class="verdict" id="verdict"></div>
+    </div>
+    <div class="row"><button type="button" id="resetDrinks">Nullstill drikke</button></div>
+  </section>
+
+  <section aria-labelledby="h-send">
+    <h2 id="h-send">Klar?</h2>
+    <p class="scale-quip" id="sendInfo" style="margin-bottom:12px"></p>
+    <div class="row" style="margin-top:0">
+      <button class="primary big" type="submit" form="form" id="submitBtn">Meld meg på</button>
+      <button type="button" id="nullstill">Tøm skjema</button>
+    </div>
+  </section>
+
+  <section class="fine" aria-labelledby="h-reg">
+    <h2 id="h-reg">Regnestykket</h2>
+    <p><strong>Widmarks formel:</strong> <code>gram = (promille + 0,15 × 2 t) × r × vekt</code>. Kroppen brenner ca. 0,15 ‰ i timen, så på et vors på to timer må du dekke 0,30 ‰ ekstra.</p>
+    <p><strong>r-faktor (Seidl m.fl., 2000)</strong> bruker vekt og høyde. Menn: <code>0,3161 − 0,004821 × kg + 0,004632 × cm</code>. Kvinner: <code>0,3122 − 0,006446 × kg + 0,004466 × cm</code>.</p>
+    <p><strong>Target:</strong> 1,10 ‰, pluss nivå: Sigvill +0 %, Lettvekter +5 %, Solid +10 %, Chad +15 %, Iver vektklasse performance +40 % (maks 1,54 ‰).</p>
+    <p><strong>1 enhet = 12 g rent alkohol.</strong> Alkohol veier 0,789 g per ml.</p>
+    <p>Grovt estimat for moro skyld. Mat, tempo og dagsform gjør mye. Ingen kjører, og pass på crewet ditt.</p>
+  </section>
+
+</div>
+
+<script>
+window.FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBHOas9zhRaudbge2D1w0CymMlzK4wxByc",
+  authDomain: "fyllafotball.firebaseapp.com",
+  projectId: "fyllafotball",
+  storageBucket: "fyllafotball.firebasestorage.app",
+  messagingSenderId: "694388145822",
+  appId: "1:694388145822:web:18345d4f1ccd5c2841058f"
+};
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+const LEVELS=[null,
+  {n:"Sigvill",p:0,q:"Jakob 2D build."},
+  {n:"Lettvekter",p:5,q:"Tre pils og du er DJ. Vi respekterer det."},
+  {n:"Solid",p:10,q:"Stabil gutt. Møter opp, leverer, ingen drama."},
+  {n:"Chad",p:15,q:"Shotglasset er en del av hånda di. Sigma-vors."},
+  {n:"Iver vektklasse performance",p:40,q:"Full send. Leveren din har egen agent."}];
+const DRINKS=[
+  {id:"ol33",name:"Øl 0,33 l",spec:"4,5 %",ml:330,abv:4.5},
+  {id:"ol50",name:"Øl 0,5 l",spec:"4,7 %",ml:500,abv:4.7},
+  {id:"vin",name:"Vinglass 15 cl",spec:"12,5 %",ml:150,abv:12.5},
+  {id:"shot",name:"Shot 4 cl",spec:"40 %",ml:40,abv:40},
+];
+DRINKS.forEach(d=>d.g=d.ml*d.abv/100*0.789);
+const ICON={
+  ol33:'<svg viewBox="0 0 18 22" aria-hidden="true"><path d="M5 4h8v16H5z" fill="var(--card)" stroke="var(--fg)" stroke-width="1.2"/><path d="M4.5 4c0-2 2-2.6 3-2 1-1.2 3.4-1 3.8.4 1.4-.4 2.4.6 2.2 1.6z" fill="var(--surface)" stroke="var(--fg)" stroke-width="1"/></svg>',
+  ol50:'<svg viewBox="0 0 18 22" aria-hidden="true"><path d="M3 5h10v16H3z" fill="var(--card)" stroke="var(--fg)" stroke-width="1.2"/><path d="M13 8h2.5a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5H13" fill="none" stroke="var(--fg)" stroke-width="1.4"/><path d="M2.5 5c0-2.2 2.4-3 3.6-2.2 1.2-1.4 4-1.2 4.4.6 1.6-.4 2.8.6 2.6 1.6z" fill="var(--surface)" stroke="var(--fg)" stroke-width="1"/></svg>',
+  vin:'<svg viewBox="0 0 18 22" aria-hidden="true"><path d="M4 2h10c0 6-2 9-5 9s-5-3-5-9z" fill="none" stroke="var(--fg)" stroke-width="1.2"/><path d="M4.4 5.5h9.2C13.2 9 11.5 10.6 9 10.6S4.8 9 4.4 5.5z" fill="var(--red)"/><path d="M9 11v8M5.5 20.5h7" stroke="var(--fg)" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>',
+  shot:'<svg viewBox="0 0 18 22" aria-hidden="true"><path d="M4 9h10l-1.4 12H5.4z" fill="none" stroke="var(--fg)" stroke-width="1.2"/><path d="M4.6 13h8.8l-.9 7.6H5.5z" fill="var(--pitch)"/></svg>'
+};
+const MAXICONS=24; let prevCounts={}, prevPlayer=null;
+const H=2, BETA=0.15;
+const $=id=>document.getElementById(id);
+const fmt=(x,d=0)=>x.toLocaleString("nb-NO",{minimumFractionDigits:d,maximumFractionDigits:d});
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function rFactor(sex,kg,cm){
+  const r=sex==="k"?0.31223-0.006446*kg+0.004466*cm:0.31608-0.004821*kg+0.004632*cm;
+  return Math.min(0.9,Math.max(0.45,r));
+}
+function calc(p){
+  const target=1.10*(1+LEVELS[p.niva].p/100);
+  const r=rFactor(p.kjonn,p.vekt,p.hoyde);
+  return {target,r,grams:(target+BETA*H)*r*p.vekt};
+}
+const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k)||"null");}catch(e){return null;}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+
+/* ---------- State ---------- */
+let teams=[], players=[], viewing=lsGet("ff_viewing"), myIds=lsGet("ff_mine")||[];
+let db=null, shared=false;
+
+/* Lokal fallback når delt lagring ikke er tilgjengelig */
+const local={
+  load(){const s=lsGet("ff_local")||{};teams=s.teams||[];players=s.players||[];},
+  save(){lsSet("ff_local",{teams,players});}
+};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+async function addTeam(navn){
+  const t={navn,created:Date.now()};
+  if(shared){await db.collection("lag").add(t);}
+  else{teams.push({id:uid(),...t});local.save();renderAll();}
+}
+async function deleteTeam(id){
+  if(shared){
+    await db.doc("lag/"+id).delete();
+    for(const p of players.filter(p=>p.lagId===id)) await db.doc("spillere/"+p.id).update({lagId:""});
+  }else{teams=teams.filter(t=>t.id!==id);players.forEach(p=>{if(p.lagId===id)p.lagId="";});local.save();renderAll();}
+}
+async function addPlayer(p){
+  if(shared){const ref=await db.collection("spillere").add(p);return ref.id;}
+  const id=uid();players.push({id,...p});local.save();return id;
+}
+async function patchPlayer(id,patch){
+  if(shared){await db.doc("spillere/"+id).update(patch);}
+  else{Object.assign(players.find(p=>p.id===id)||{},patch);local.save();renderAll();}
+}
+async function removePlayer(id){
+  if(shared){await db.doc("spillere/"+id).delete();}
+  else{players=players.filter(p=>p.id!==id);local.save();renderAll();}
+  myIds=myIds.filter(x=>x!==id);lsSet("ff_mine",myIds);
+}
+const current=()=>players.find(p=>p.id===viewing)||players.find(p=>myIds.includes(p.id))||null;
+function formPlayer(){
+  const v=+$("vekt").value,h=+$("hoyde").value;if(!(v>0&&h>0))return null;
+  return {id:"__preview",navn:$("navn").value.trim()||"Deg",kjonn:$("kjonn").value,vekt:v,hoyde:h,niva:+$("niva").value,lagId:$("lagValg").value,drinks:{}};
+}
+function setViewing(id){viewing=id;lsSet("ff_viewing",id);renderAll();}
+
+/* ---------- Render ---------- */
+function renderLevel(){const l=LEVELS[+$("niva").value];$("nivaTxt").innerHTML=`${l.n}<small>+${fmt(l.p,l.p%1?1:0)} %</small>`;$("nivaQuip").textContent=l.q;}
+$("niva").addEventListener("input",renderLevel);
+$("form").addEventListener("input",()=>renderBoard());
+$("form").addEventListener("change",()=>renderBoard());
+
+function chip(p){
+  const c=document.createElement("span");c.className="chip"+(current()?.id===p.id?" active":"");
+  const b=document.createElement("button");b.className="pick";b.type="button";b.textContent=p.navn;
+  b.title="Vis vorsmålet til "+p.navn;b.onclick=()=>setViewing(p.id);
+  const s=document.createElement("small");s.textContent=LEVELS[p.niva]?.n||"";
+  const x=document.createElement("button");x.type="button";x.setAttribute("aria-label","Meld av "+p.navn);x.textContent="×";
+  x.onclick=()=>removePlayer(p.id);
+  c.append(b,s,x);return c;
+}
+let prevMembers=null;const flashAt={},joinAt={};
+function toast(msg){const t=document.createElement("div");t.className="toast";t.setAttribute("role","status");t.textContent=msg;document.body.append(t);setTimeout(()=>t.remove(),2700);}
+function renderTeams(){
+  const box=$("teams");box.innerHTML="";
+  const members={};teams.forEach(t=>members[t.id]=players.filter(p=>p.lagId===t.id).map(p=>p.id));
+  const joined={};
+  if(prevMembers){for(const tid in members){const before=prevMembers[tid]||[];
+    const neu=members[tid].filter(id=>!before.includes(id));if(neu.length)joined[tid]=neu;}}
+  prevMembers=members;
+  const now=Date.now();
+  for(const tid in joined){flashAt[tid]=now;joined[tid].forEach(id=>joinAt[id]=now);}
+  for(const tid in joined){const t=teams.find(x=>x.id===tid);
+    joined[tid].forEach(id=>{const p=players.find(x=>x.id===id);if(p&&t)toast(`${p.navn} ble med i ${t.navn}!`);});}
+  const groups=[...teams.map(t=>({t,ps:players.filter(p=>p.lagId===t.id)}))];
+  const loose=players.filter(p=>!teams.some(t=>t.id===p.lagId));
+  if(!teams.length&&!players.length){box.innerHTML='<p class="empty">Ingen lag ennå. Lag det første over, så kan crewet melde seg på.</p>';}
+  groups.forEach(({t,ps})=>{
+    const el=document.createElement("div");el.className="team";
+    if(flashAt[t.id]&&now-flashAt[t.id]<1600){el.classList.add("flash");el.style.animationDelay=-(now-flashAt[t.id])+"ms";}
+    const tot=ps.reduce((s,p)=>s+calc(p).grams,0);
+    el.innerHTML=`<div class="team-head"><h3>${esc(t.navn)}</h3><span>${ps.length} spillere · ${fmt(tot)} g totalt</span></div>`;
+    const chips=document.createElement("div");chips.className="chips";
+    ps.length?ps.forEach(p=>{const c=chip(p);if(joinAt[p.id]&&now-joinAt[p.id]<500){c.classList.add("joined");c.style.animationDelay=-(now-joinAt[p.id])+"ms";}chips.append(c);}):chips.innerHTML='<p class="empty">Tomt lag. Meld deg på under.</p>';
+    el.append(chips);
+    const row=document.createElement("div");row.className="row";row.style.marginTop="0";
+    const join=document.createElement("button");join.type="button";join.textContent="Meld meg på dette laget";
+    join.onclick=async()=>{
+      const cur=current();const mine=(cur&&myIds.includes(cur.id))?cur:players.find(p=>myIds.includes(p.id));
+      if(mine){if(mine.lagId===t.id){toast(`Du er allerede på ${t.navn}`);return;}
+        try{await patchPlayer(mine.id,{lagId:t.id});setViewing(mine.id);}catch(e){toast("Fikk ikke byttet lag. Prøv igjen.");}return;}
+      $("lagValg").value=t.id;
+      if(formPlayer()){await signup();return;}
+      toast(`Fyll inn navn, vekt og høyde øverst, så havner du på ${t.navn}`);
+      $("h-spiller").scrollIntoView({behavior:"smooth"});$("navn").focus({preventScroll:true});};
+    const del=document.createElement("button");del.type="button";del.textContent="Slett lag";
+    del.onclick=()=>{if(del.dataset.armed){deleteTeam(t.id);}else{del.dataset.armed="1";del.textContent="Sikker? Trykk igjen";setTimeout(()=>{del.dataset.armed="";del.textContent="Slett lag";},3000);}};
+    row.append(join,del);el.append(row);box.append(el);
+  });
+  if(loose.length){
+    const el=document.createElement("div");el.className="team";
+    el.innerHTML=`<div class="team-head"><h3>Uten lag</h3><span>${loose.length} spillere</span></div>`;
+    const chips=document.createElement("div");chips.className="chips";loose.forEach(p=>chips.append(chip(p)));
+    el.append(chips);box.append(el);
+  }
+  const sel=$("lagValg"),v=sel.value;
+  sel.innerHTML='<option value="">Uten lag</option>'+teams.map(t=>`<option value="${esc(t.id)}">${esc(t.navn)}</option>`).join("");
+  if([...sel.options].some(o=>o.value===v))sel.value=v;
+}
+function renderBoard(){
+  const fp=formPlayer();const preview=!!fp&&!editingId;
+  const p=fp||current();
+  $("sendInfo").textContent=fp?(editingId?"Lagre endringene for "+fp.navn+".":fp.navn+" får "+fmt(calc(fp).grams)+" g på vorset. Ser bra ut? Meld deg på."):"Fyll ut spillerkortet øverst først.";
+  $("endre").hidden=!p;
+  if(!p){$("who").textContent="Meld deg på nederst for å få ditt vorsmål.";$("gram").textContent="–";$("mal").textContent="–";$("equiv").textContent="";return;}
+  const {target,r,grams}=calc(p);
+  const lag=teams.find(t=>t.id===p.lagId)?.navn||"uten lag";
+  $("who").textContent=`${preview?"Forhåndsvisning · ":""}${p.navn} · ${lag} · ${fmt(p.vekt,0)} kg · ${fmt(p.hoyde,0)} cm · ${LEVELS[p.niva].n} · r = ${fmt(r,2)}`;
+  $("gram").textContent=fmt(grams)+" g";
+  $("mal").textContent=fmt(target,2)+" ‰";
+  const e=id=>fmt(grams/DRINKS.find(d=>d.id===id).g,1);
+  $("equiv").innerHTML=`Det er <strong>${fmt(grams/12,1)}</strong> enheter på to timer. F.eks. <strong>${e("ol50")}</strong> halvlitere, <strong>${e("ol33")}</strong> små pils, <strong>${e("vin")}</strong> glass vin eller <strong>${e("shot")}</strong> shots. Mix som du vil.`;
+}
+function renderDrinks(){
+  const p=current();const box=$("drinks");box.innerHTML="";
+  $("kalkWho").textContent=p?`Teller for ${p.navn}`:"Meld deg på nederst først, så teller vi.";
+  DRINKS.forEach(d=>{
+    const n=p?.drinks?.[d.id]||0;
+    const row=document.createElement("div");row.className="drink";
+    const was=prevPlayer===p?.id?(prevCounts[d.id]??n):n;
+    let ic="";for(let i=0;i<Math.min(n,MAXICONS);i++)ic+=ICON[d.id].replace("<svg",i>=was?'<svg class="pop"':"<svg");
+    if(n>MAXICONS)ic+=`<span class="more">+${n-MAXICONS}</span>`;
+    row.innerHTML=`<div><div class="name">${d.name}</div><div class="spec">${d.spec} · ${fmt(d.g,1)} g</div><div class="icons" aria-label="${n} ${d.name}">${ic}</div></div>
+      <div class="step"><button type="button" aria-label="Én mindre ${d.name}">−</button><output>${n}</output><button type="button" aria-label="Én til ${d.name}">+</button></div>`;
+    const [minus,plus]=row.querySelectorAll("button");
+    minus.onclick=()=>bump(d.id,-1);plus.onclick=()=>bump(d.id,1);
+    box.append(row);
+  });
+  prevPlayer=p?.id||null;prevCounts={...(p?.drinks||{})};
+  const v=$("verdict");
+  if(!p){$("fill").style.width="0";$("inntatt").textContent="0 g inn";$("est").textContent="";v.textContent="";return;}
+  const {r,grams}=calc(p);
+  const g=DRINKS.reduce((s,d)=>s+(p.drinks?.[d.id]||0)*d.g,0);
+  const est=Math.max(0,g/(r*p.vekt)-BETA*H);
+  const pct=g/grams*100;
+  $("fill").style.width=Math.min(100,pct)+"%";
+  $("bar").classList.toggle("over",pct>110);
+  $("bar").classList.toggle("done",pct>=95&&pct<=110);
+  $("inntatt").textContent=`${fmt(g)} av ${fmt(grams)} g (${fmt(pct)} %)`;
+  $("est").textContent=`≈ ${fmt(est,2)} ‰ ved avspark`;
+  v.classList.toggle("over",pct>110);
+  const left=grams-g;
+  if(pct>110)v.textContent=`Du er over target med ${fmt(-left)} g, bro. Du er mer enn klar. Chill med neste til kampen.`;
+  else if(pct>=95)v.textContent="Du er safe, ok chad. Klar for avspark.";
+  else if(pct>=60)v.textContent=`Snart der. ${fmt(left)} g igjen, ca. ${fmt(left/DRINKS[1].g,1)} halvlitere eller ${fmt(left/DRINKS[3].g,1)} shots.`;
+  else if(pct>0)v.textContent=`Oppvarming. ${fmt(left)} g igjen, ca. ${fmt(left/DRINKS[1].g,1)} halvlitere eller ${fmt(left/DRINKS[3].g,1)} shots.`;
+  else v.textContent=`Null inn så langt. Vorset starter nå: ${fmt(left/DRINKS[1].g,1)} halvlitere eller ${fmt(left/DRINKS[3].g,1)} shots til target.`;
+}
+let pending=Promise.resolve();
+function bump(id,d){
+  const p=current();
+  if(!p){toast("Meld deg på først, eller trykk på navnet ditt i lista øverst");$("h-alle").scrollIntoView({behavior:"smooth"});return;}
+  const drinks={...(p.drinks||{})};drinks[id]=Math.max(0,(drinks[id]||0)+d);
+  p.drinks=drinks;renderAll();
+  pending=pending.then(()=>patchPlayer(p.id,{drinks})).catch(()=>{});
+}
+$("resetDrinks").onclick=()=>{const p=current();if(p){p.drinks={};renderDrinks();pending=pending.then(()=>patchPlayer(p.id,{drinks:{}})).catch(()=>{});}};
+function renderTable(){
+  const tb=$("alle");tb.innerHTML="";
+  if(!players.length){tb.innerHTML='<tr><td colspan="9" class="empty">Ingen påmeldte ennå.</td></tr>';return;}
+  const cur=current()?.id;
+  players.forEach(p=>{
+    const {target,grams}=calc(p);
+    const g=DRINKS.reduce((s,d)=>s+(p.drinks?.[d.id]||0)*d.g,0);
+    const pct=g/grams*100;
+    const cls=pct>110?"over":pct>=95?"done":"";
+    const dr=DRINKS.filter(d=>p.drinks?.[d.id]).map(d=>p.drinks[d.id]+"× "+d.name).join(", ")||"–";
+    const tr=document.createElement("tr");tr.dataset.id=p.id;if(p.id===cur)tr.className="me";
+    tr.innerHTML=`<td>${esc(p.navn)}</td><td data-l="Lag">${esc(teams.find(t=>t.id===p.lagId)?.navn||"–")}</td>
+      <td data-l="Nivå">${esc(LEVELS[p.niva]?.n||"")}</td>
+      <td class="num" data-l="Vekt">${fmt(p.vekt,0)} kg</td><td class="num" data-l="Høyde">${fmt(p.hoyde,0)} cm</td>
+      <td class="num" data-l="Target">${fmt(target,2)} ‰</td><td class="num" data-l="Mål">${fmt(grams)} g</td>
+      <td data-l="Inntatt"><span class="mini ${cls}"><i style="width:${Math.min(100,pct)}%"></i></span>${fmt(g)} g</td><td>${esc(dr)}</td>`;
+    tr.onclick=()=>setViewing(p.id);
+    tb.append(tr);
+  });
+}
+function renderAll(){renderTable();renderTeams();renderBoard();renderDrinks();}
+
+/* ---------- Forms ---------- */
+$("lagForm").addEventListener("submit",async e=>{
+  e.preventDefault();const n=$("lagNavn").value.trim();if(!n)return;
+  try{await addTeam(n);$("lagNavn").value="";}catch(err){$("sync").textContent="Fikk ikke lagret laget. Sjekk at du har tilgang til å redigere siden.";}
+});
+let editingId=null;
+function setEditMode(p){
+  editingId=p?p.id:null;setTimeout(renderBoard);
+  $("submitBtn").textContent=p?"Lagre endringer":"Meld meg på";
+  $("nullstill").textContent=p?"Avbryt":"Tøm skjema";
+  $("editInfo").hidden=!p;$("editInfo").textContent=p?"Du endrer "+p.navn+". Velg nytt lag i lista for å flytte.":"";
+}
+$("endre").onclick=()=>{
+  const p=current();if(!p)return;
+  $("navn").value=p.navn;$("kjonn").value=p.kjonn;$("vekt").value=p.vekt;$("hoyde").value=p.hoyde;
+  $("niva").value=p.niva;$("lagValg").value=p.lagId||"";renderLevel();setEditMode(p);
+  $("h-spiller").scrollIntoView({behavior:"smooth",block:"start"});$("navn").focus({preventScroll:true});
+};
+$("form").addEventListener("submit",e=>{e.preventDefault();signup();});
+async function signup(){
+  if(editingId){
+    const patch={navn:$("navn").value.trim()||"Spiller",kjonn:$("kjonn").value,vekt:+$("vekt").value,
+      hoyde:+$("hoyde").value,niva:+$("niva").value,lagId:$("lagValg").value};
+    if(!(patch.vekt>0&&patch.hoyde>0)){toast("Fyll inn vekt og høyde");return;}
+    try{await patchPlayer(editingId,patch);setEditMode(null);$("form").reset();renderLevel();renderBoard();}
+    catch(err){$("sync").textContent="Fikk ikke lagret endringen. Sjekk at du har tilgang til å redigere siden.";}
+    return;
+  }
+  const p={navn:$("navn").value.trim()||"Spiller",kjonn:$("kjonn").value,vekt:+$("vekt").value,
+    hoyde:+$("hoyde").value,niva:+$("niva").value,lagId:$("lagValg").value,drinks:{},created:Date.now()};
+  if(!(p.vekt>0&&p.hoyde>0)){toast("Fyll inn vekt og høyde øverst");$("h-spiller").scrollIntoView({behavior:"smooth"});return;}
+  try{
+    const id=await addPlayer(p);
+    myIds.push(id);lsSet("ff_mine",myIds);viewing=id;lsSet("ff_viewing",id);
+    if(!shared)renderAll();
+    $("form").reset();renderLevel();renderBoard();
+  }catch(err){$("sync").textContent="Fikk ikke meldt deg på. Sjekk at du har tilgang til å redigere siden.";}
+}
+$("nullstill").onclick=()=>{$("form").reset();setEditMode(null);renderLevel();renderBoard();};
+
+/* ---------- Boot ---------- */
+renderLevel();local.load();renderAll();
+$("sync").textContent="Kobler til felles lagliste …";
+(async()=>{
+  const cfg=window.FIREBASE_CONFIG;
+  if(!cfg||!cfg.apiKey||!window.firebase){$("sync").textContent="Lokal modus: lagene lagres bare på denne mobilen.";return;}
+  try{firebase.initializeApp(cfg);db=firebase.firestore();}catch(e){$("sync").textContent="Fikk ikke koblet til databasen. Sjekk Firebase-oppsettet.";return;}
+  shared=true;teams=[];players=[];renderAll();
+  $("sync").textContent="Live: alle som åpner lenken ser de samme lagene.";
+  const fail=()=>{$("sync").textContent="Mistet koblingen til lagene. Last inn siden på nytt.";};
+  db.collection("lag").orderBy("created").onSnapshot(s=>{teams=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();},fail);
+  db.collection("spillere").orderBy("created").onSnapshot(s=>{players=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();},fail);
+})();
+</script>
+
+</body>
+</html>
